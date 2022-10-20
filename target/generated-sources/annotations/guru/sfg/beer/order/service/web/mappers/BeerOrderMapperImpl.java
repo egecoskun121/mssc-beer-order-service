@@ -6,21 +6,27 @@ import guru.sfg.beer.order.service.domain.Customer;
 import guru.sfg.beer.order.service.web.model.BeerOrderDto;
 import guru.sfg.beer.order.service.web.model.BeerOrderLineDto;
 import guru.sfg.beer.order.service.web.model.OrderStatusEnum;
-import java.sql.Timestamp;
-import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import javax.annotation.processing.Generated;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2022-10-17T17:53:35+0300",
+    date = "2022-10-18T23:12:34+0300",
     comments = "version: 1.5.2.Final, compiler: javac, environment: Java 17.0.1 (Oracle Corporation)"
 )
 @Component
 public class BeerOrderMapperImpl implements BeerOrderMapper {
+
+    @Autowired
+    private DateMapper dateMapper;
+    @Autowired
+    private BeerOrderLineMapper beerOrderLineMapper;
 
     @Override
     public BeerOrderDto beerOrderToDto(BeerOrder beerOrder) {
@@ -28,19 +34,21 @@ public class BeerOrderMapperImpl implements BeerOrderMapper {
             return null;
         }
 
-        UUID id = null;
-        Integer version = null;
-        OffsetDateTime createdDate = null;
-        OffsetDateTime lastModifiedDate = null;
-        UUID customerId = null;
-        List<BeerOrderLineDto> beerOrderLines = null;
-        OrderStatusEnum orderStatus = null;
-        String orderStatusCallbackUrl = null;
-        String customerRef = null;
+        BeerOrderDto.BeerOrderDtoBuilder beerOrderDto = BeerOrderDto.builder();
 
-        BeerOrderDto beerOrderDto = new BeerOrderDto( id, version, createdDate, lastModifiedDate, customerId, beerOrderLines, orderStatus, orderStatusCallbackUrl, customerRef );
+        beerOrderDto.customerId( beerOrderCustomerId( beerOrder ) );
+        beerOrderDto.id( beerOrder.getId() );
+        if ( beerOrder.getVersion() != null ) {
+            beerOrderDto.version( beerOrder.getVersion().intValue() );
+        }
+        beerOrderDto.createdDate( dateMapper.asOffsetDateTime( beerOrder.getCreatedDate() ) );
+        beerOrderDto.lastModifiedDate( dateMapper.asOffsetDateTime( beerOrder.getLastModifiedDate() ) );
+        beerOrderDto.beerOrderLines( beerOrderLineSetToBeerOrderLineDtoList( beerOrder.getBeerOrderLines() ) );
+        beerOrderDto.orderStatus( orderStatusEnumToOrderStatusEnum( beerOrder.getOrderStatus() ) );
+        beerOrderDto.orderStatusCallbackUrl( beerOrder.getOrderStatusCallbackUrl() );
+        beerOrderDto.customerRef( beerOrder.getCustomerRef() );
 
-        return beerOrderDto;
+        return beerOrderDto.build();
     }
 
     @Override
@@ -49,18 +57,100 @@ public class BeerOrderMapperImpl implements BeerOrderMapper {
             return null;
         }
 
-        UUID id = null;
-        Long version = null;
-        Timestamp createdDate = null;
-        Timestamp lastModifiedDate = null;
-        String customerRef = null;
-        Customer customer = null;
-        Set<BeerOrderLine> beerOrderLines = null;
-        guru.sfg.beer.order.service.domain.OrderStatusEnum orderStatus = null;
-        String orderStatusCallbackUrl = null;
+        BeerOrder.BeerOrderBuilder beerOrder = BeerOrder.builder();
 
-        BeerOrder beerOrder = new BeerOrder( id, version, createdDate, lastModifiedDate, customerRef, customer, beerOrderLines, orderStatus, orderStatusCallbackUrl );
+        beerOrder.id( dto.getId() );
+        if ( dto.getVersion() != null ) {
+            beerOrder.version( dto.getVersion().longValue() );
+        }
+        beerOrder.createdDate( dateMapper.asTimestamp( dto.getCreatedDate() ) );
+        beerOrder.lastModifiedDate( dateMapper.asTimestamp( dto.getLastModifiedDate() ) );
+        beerOrder.customerRef( dto.getCustomerRef() );
+        beerOrder.beerOrderLines( beerOrderLineDtoListToBeerOrderLineSet( dto.getBeerOrderLines() ) );
+        beerOrder.orderStatus( orderStatusEnumToOrderStatusEnum1( dto.getOrderStatus() ) );
+        beerOrder.orderStatusCallbackUrl( dto.getOrderStatusCallbackUrl() );
 
-        return beerOrder;
+        return beerOrder.build();
+    }
+
+    private UUID beerOrderCustomerId(BeerOrder beerOrder) {
+        if ( beerOrder == null ) {
+            return null;
+        }
+        Customer customer = beerOrder.getCustomer();
+        if ( customer == null ) {
+            return null;
+        }
+        UUID id = customer.getId();
+        if ( id == null ) {
+            return null;
+        }
+        return id;
+    }
+
+    protected List<BeerOrderLineDto> beerOrderLineSetToBeerOrderLineDtoList(Set<BeerOrderLine> set) {
+        if ( set == null ) {
+            return null;
+        }
+
+        List<BeerOrderLineDto> list = new ArrayList<BeerOrderLineDto>( set.size() );
+        for ( BeerOrderLine beerOrderLine : set ) {
+            list.add( beerOrderLineMapper.beerOrderLineToDto( beerOrderLine ) );
+        }
+
+        return list;
+    }
+
+    protected OrderStatusEnum orderStatusEnumToOrderStatusEnum(guru.sfg.beer.order.service.domain.OrderStatusEnum orderStatusEnum) {
+        if ( orderStatusEnum == null ) {
+            return null;
+        }
+
+        OrderStatusEnum orderStatusEnum1;
+
+        switch ( orderStatusEnum ) {
+            case NEW: orderStatusEnum1 = OrderStatusEnum.NEW;
+            break;
+            case READY: orderStatusEnum1 = OrderStatusEnum.READY;
+            break;
+            case PICKED_UP: orderStatusEnum1 = OrderStatusEnum.PICKED_UP;
+            break;
+            default: throw new IllegalArgumentException( "Unexpected enum constant: " + orderStatusEnum );
+        }
+
+        return orderStatusEnum1;
+    }
+
+    protected Set<BeerOrderLine> beerOrderLineDtoListToBeerOrderLineSet(List<BeerOrderLineDto> list) {
+        if ( list == null ) {
+            return null;
+        }
+
+        Set<BeerOrderLine> set = new LinkedHashSet<BeerOrderLine>( Math.max( (int) ( list.size() / .75f ) + 1, 16 ) );
+        for ( BeerOrderLineDto beerOrderLineDto : list ) {
+            set.add( beerOrderLineMapper.dtoToBeerOrderLine( beerOrderLineDto ) );
+        }
+
+        return set;
+    }
+
+    protected guru.sfg.beer.order.service.domain.OrderStatusEnum orderStatusEnumToOrderStatusEnum1(OrderStatusEnum orderStatusEnum) {
+        if ( orderStatusEnum == null ) {
+            return null;
+        }
+
+        guru.sfg.beer.order.service.domain.OrderStatusEnum orderStatusEnum1;
+
+        switch ( orderStatusEnum ) {
+            case NEW: orderStatusEnum1 = guru.sfg.beer.order.service.domain.OrderStatusEnum.NEW;
+            break;
+            case READY: orderStatusEnum1 = guru.sfg.beer.order.service.domain.OrderStatusEnum.READY;
+            break;
+            case PICKED_UP: orderStatusEnum1 = guru.sfg.beer.order.service.domain.OrderStatusEnum.PICKED_UP;
+            break;
+            default: throw new IllegalArgumentException( "Unexpected enum constant: " + orderStatusEnum );
+        }
+
+        return orderStatusEnum1;
     }
 }
